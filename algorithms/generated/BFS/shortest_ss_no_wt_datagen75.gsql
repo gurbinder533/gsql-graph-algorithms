@@ -1,0 +1,52 @@
+use graph datagen75
+
+drop query shortest_ss_no_wt
+
+CREATE  QUERY shortest_ss_no_wt (VERTEX source, VERTEX output, BOOL display) FOR GRAPH datagen75 {
+/* This query is Single-Source Shortest Path without weights on edges. It calculates the shortest distance from the given vertex source to all other connected vertices, and shows one shortest path between them.   
+The JSON version also show visualization of the network. 
+The attribute version only store the distance into attribute, not the path.
+*/
+
+        MinAccum<int> @dis;
+        OrAccum @visited;
+        ListAccum<vertex> @path;
+        SetAccum<edge> @@edgeSet;
+
+  ##### Initialization  #####
+        Source = {source};
+        Source = SELECT s 
+                 FROM Source:s
+                 ACCUM s.@visited += true, 
+                       s.@dis = 0;
+                       #s.@path = s; 
+        ResultSet = {source};
+        PRINT ResultSet[ResultSet.@dis];
+
+  ##### Calculate distances and paths #####
+        WHILE(Source.size()>0) DO
+                Source = SELECT t
+                         FROM Source:s -(Relation:e)-> :t
+                         WHERE t.@visited == false
+                         ACCUM t.@dis += s.@dis + 1,
+                               #t.@path = s.@path + [t],
+                               t.@visited += true;
+                ResultSet = ResultSet UNION Source;
+        END;
+
+  ##### Print the results #####
+
+        OutputSet = {output};
+        PRINT OutputSet[OutputSet.@dis];
+        #PRINT ResultSet[ResultSet.@dis, ResultSet.@path];
+        IF display THEN
+                ResultSet = SELECT s
+                            FROM ResultSet:s -(Relation:e)-> :t
+                            ACCUM @@edgeSet += e;
+                PRINT @@edgeSet;
+        END;
+
+
+}
+
+install query shortest_ss_no_wt
