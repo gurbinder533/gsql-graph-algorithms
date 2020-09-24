@@ -1,0 +1,13 @@
+drop all
+ 
+create vertex Node (primary_id id string) WITH STATS="OUTDEGREE_BY_EDGETYPE"
+create undirected edge Relation(from Node, to Node, weight FLOAT)
+create graph datagen89(Node, Relation)
+
+USE GRAPH datagen89
+CREATE LOADING JOB load_datagen89_edge FOR GRAPH datagen89 {
+   DEFINE FILENAME file1;
+
+   LOAD file1 
+              TO EDGE Relation VALUES ($0, $1, $2) USING header="false", separator=" ";
+}
